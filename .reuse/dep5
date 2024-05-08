@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: sys-syssoft-maju
+Upstream-Contact: maju-degrandi <maju.degrandi@usp.br>
+Source: https://github.com/courselab/sys-syssoft-maju
+
+Files: */.dist
+Copyright: maju-degrandi <maju.degrandi@usp.br>
+License: CC0-1.0
+
