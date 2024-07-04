@@ -1,3 +1,320 @@
 #    SPDX-FileCopyrightText: 2024 Maria Júlia De Grandi <maju.degrandi@usp.br>
 #   
 #    SPDX-License-Identifier: GPL-3.0-or-later
+
+# Resolução dos exercícios do quiz
+# p1.c
+
+## ASLR (Address Space Layout Randomization)
+
+ASLR é uma técnica de segurança que randomiza a localização das áreas de memória utilizadas pelos processos, dificultando ataques que dependem de endereços previsíveis.
+
+## Resultados Iniciais
+
+Os resultados iniciais, com o ASLR habilitado, mostram que o endereço da função `main` muda a cada execução do programa:
+
+```bash
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5662e19d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x565f219d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5656a19d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5661619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5660c19d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5663019d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5658c19d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5662019d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x565f919d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x565b819d
+```
+
+## Desabilitando o ASLR
+
+Para observar um comportamento consistente dos endereços, podemos desabilitar o ASLR temporariamente. Isso pode ser feito com o seguinte comando no Linux:
+
+```bash
+sudo sysctl -w kernel.randomize_va_space=0
+```
+
+Para reativar o ASLR depois de terminar os testes, use:
+
+```bash
+sudo sysctl -w kernel.randomize_va_space=2
+```
+
+## Resultados Após Desabilitar o ASLR
+
+Após desabilitar o ASLR, os endereços de memória devem ser consistentes em todas as execuções:
+
+```bash
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ ./p1
+Main's address: 0x5655619d
+```
+
+## Conclusão
+
+A variação nos endereços de memória é devido ao ASLR, uma técnica de segurança importante. Desabilitá-lo temporariamente pode ser útil para testes, mas deve ser reativado para manter a segurança do sistema.
+
+
+# p2.c
+
+## Passos Realizados
+
+1. **Compilar o programa `p2`**
+
+   ```bash
+   make p2
+   ```
+
+2. **Executar o programa e inserir a entrada correta**
+
+   ```bash
+   ./p2
+   ```
+
+   - Entrada: `foo`
+   - Saída:
+     ```
+     Enter password: foo
+     Access granted.
+     ```
+
+3. **Executar o programa novamente e inserir `youshallnotpass`**
+
+   ```bash
+   ./p2
+   ```
+
+   - Entrada: `youshallnotpass`
+   - Saída:
+     ```
+     Enter password: youshallnotpass
+     Access granted.
+     ```
+
+4. **Explicar o Resultado e Identificar a Falha de Design**
+
+   - Observação: Mesmo com a senha incorreta `youshallnotpass`, o acesso foi concedido.
+   - Falha de Design: O programa não está validando corretamente a senha, permitindo acesso indevido.
+   - Possível Modificação: Melhorar a verificação de senha para garantir que apenas a senha correta conceda acesso.
+
+5. **Recompilar o programa com proteção de pilha**
+
+   ```bash
+   make clean
+   make CFLAGS=-fstack-protector p2
+   ```
+
+6. **Testar o programa novamente com a string `youshallnotpass`**
+
+   ```bash
+   ./p2
+   ```
+
+   - Entrada: `foo`
+   - Saída:
+     ```
+     Enter password: foo
+     Access granted.
+     ```
+
+   - Entrada: `youshallnotpass`
+   - Saída:
+     ```
+     Enter password: youshallnotpass
+     Access denied
+     ```
+
+## Análise dos Resultados
+
+- **Comportamento com a Proteção de Pilha Ativada**
+  - A proteção de pilha introduz um canário que ajuda a detectar sobrescrita de buffer. Embora nenhum estouro de pilha tenha sido detectado, a proteção adicional alterou o comportamento do programa, prevenindo a exploração da vulnerabilidade.
+  - A senha incorreta `youshallnotpass` agora é corretamente negada, indicando que a proteção de pilha impediu a execução indevida do código.
+
+## Conclusão
+
+- A falha de design inicial permitia acesso com qualquer senha devido à verificação inadequada.
+- A recompilação com `-fstack-protector` adicionou uma camada de segurança, corrigindo a vulnerabilidade.
+- É crucial sempre validar corretamente as entradas e usar medidas de proteção adicionais para prevenir exploração de vulnerabilidades em programas.
+
+# p3
+
+## Comandos executados:
+```bash
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ make p3
+gcc -Wall -m32  -O0  -fno-pic -fno-pie -Wl,-no-pie p3.c -o p3
+
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ make p3/d > p3.d
+
+maju@DESKTOP-T14B30M:~/Projetos/monaco-syseg/syseg/try/quiz$ grep -A 20 '<main>' p3.d
+0804918d <main>:
+ 804918d:       55                      push   %ebp
+ 804918e:       89 e5                   mov    %esp,%ebp
+ 8049190:       83 e4 f0                and    $0xfffffff0,%esp
+ 8049193:       e8 07 00 00 00          call   804919f <foo>
+ 8049198:       b8 00 00 00 00          mov    $0x0,%eax
+ 804919d:       c9                      leave
+ 804919e:       c3                      ret
+```
+
+## Respostas:
+
+### a) Como 'foo' chama 'bar' e passa parâmetros
+A linha onde 'foo' chama 'bar' é:
+```
+80491af:       e8 eb ff ff ff    call   804919f <bar>
+```
+Antes da chamada, o parâmetro é colocado na pilha:
+```
+80491ae:       50                push   %eax
+```
+Isso é parte da convenção de chamada (calling convention), que define como os parâmetros são passados entre as funções e como o stack frame é manipulado. Na arquitetura x86, a convenção de chamada CDECL, usada pelo GCC, define que os parâmetros são empilhados da direita para a esquerda, e a função chamadora é responsável por limpar a pilha após a chamada.
+
+A Interface Binária de Aplicação (ABI) é um conjunto de convenções que inclui a calling convention, determinando como diferentes partes de um programa se comunicam no nível binário, garantindo a compatibilidade entre código compilado de diferentes módulos.
+
+### b) Como 'bar' retorna seu resultado para 'foo'
+'bar' retorna seu resultado através do registrador %eax:
+```
+80491ce:       8b 45 fc          mov    -0x4(%ebp),%eax
+```
+Em seguida, 'foo' usa o valor retornado movendo-o para -0xc(%ebp):
+```
+80491b7:       89 45 f4          mov    %eax,-0xc(%ebp)
+```
+A resposta está relacionada com a calling convention, pois o registrador %eax é geralmente usado para armazenar o valor de retorno de uma função.
+
+### c) Propósito das instruções no início e fim de 'foo'
+As duas primeiras instruções de 'foo' são:
+```
+804919f:       55                push   %ebp
+80491a0:       89 e5             mov    %esp,%ebp
+```
+E a penúltima é:
+```
+80491bd:       c9                leave
+```
+Estas instruções são usadas para configurar e desmontar o stack frame da função. Elas são parte de convenções necessárias para preservar o contexto da função chamadora e preparar o ambiente para a execução da função atual. Isso está relacionado à calling convention discutida no item (a).
+
+### d) Propósito da terceira linha em 'foo' e 'bar'
+A terceira linha em 'foo' e 'bar' é:
+```
+80491a2:       83 ec 18          sub    $0x18,%esp  (em 'foo')
+80491c2:       83 ec 10          sub    $0x10,%esp  (em 'bar')
+```
+Estas instruções ajustam o ponteiro de pilha (%esp) para alocar espaço para variáveis locais da função. Isso está relacionado ao ABI x86, que define como o espaço de pilha deve ser gerenciado para manter a função independente e segura. Isso difere da terceira linha de 'main':
+```
+8049190:       83 e4 f0          and    $0xfffffff0,%esp
+```
+que alinha o ponteiro de pilha a um limite de 16 bytes, uma prática comum para otimizar o desempenho em algumas operações de memória.
+
+### e) Mudança no tipo de retorno de 'bar' para 'char'
+Após alterar o tipo de retorno de `bar` para `char` e recompilar o programa, observamos as seguintes mudanças significativas na desassemblagem de `foo`:
+
+Antes da mudança:
+```assembly
+ 80491b7:       89 45 f4                mov    %eax,-0xc(%ebp)
+```
+
+Depois da mudança:
+```assembly
+ 80491ba:       89 45 f4                mov    %eax,-0xc(%ebp)
+ 80491b7:       0f be c0                movsbl %al,%eax
+```
+
+1. **O que o compilador fez:**
+   - Após a chamada de `bar` em `foo`, o valor retornado por `bar` (um byte) é movido para uma posição na pilha (`-0xc(%ebp)`).
+   - Antes da alteração, o valor era simplesmente movido para a pilha.
+   - Depois da alteração, o compilador adicionou a instrução `movsbl %al,%eax`. Esta instrução `movsbl` realiza uma extensão de sinal de byte (sign-extend) do byte de `al` para `eax`, preenchendo `eax` com zeros ou uns, dependendo do sinal do byte original em `al`.
+
+2. **Importância das declarações de função antes de `main`:**
+   - Declarar as funções `foo` e `bar` antes de `main` permite que o compilador conheça suas assinaturas (tipos de retorno e parâmetros) ao compilar `main`.
+   - Isso é crucial para que o compilador possa gerar corretamente as chamadas de função, como vimos na extensão de sinal adicionada após a chamada de `bar` em `foo`.
+   - Além disso, as declarações antecipadas ajudam na geração de código otimizado e na resolução de dependências entre funções no processo de compilação.
+
+# p4
+## Respostas:
+### a) Execução de cada programa:
+
+1. **p4-v1:**
+   - Resultado: "Foo"
+   - Comentário: O programa foi executado com sucesso e imprimiu "Foo".
+
+2. **p4-v2:**
+   - Resultado: "Foo"
+   - Comentário: O programa foi executado com sucesso e imprimiu "Foo".
+
+3. **p4-v3:**
+   - Resultado inicial: Erro `./p4-v3: error while loading shared libraries: libp4.so: cannot open shared object file: No such file or directory`
+   - Após definir `LD_LIBRARY_PATH`: O programa foi executado com sucesso e imprimiu "Foo".
+   
+No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser encontrada, mas após configurar o `LD_LIBRARY_PATH`, o programa foi executado corretamente.
+
+### b) Comparação de tamanho dos programas:
+
+- `p4-v1`: 15020 bytes
+- `p4-v2`: 14980 bytes
+- `p4-v3`: 14924 bytes
+
+   - Observa-se uma pequena diferença nos tamanhos dos executáveis, sendo `p4-v3` o menor entre os três.
+
+### c) Inspeção com `nm`:
+
+- **p4-v1**:
+  - `foo` e `bar` são definidos como símbolos (`T` para função).
+  
+- **p4-v2**:
+  - `foo` é listado como símbolo (`T` para função), enquanto `bar` não é listado (símbolo interno ao arquivo estático).
+
+- **p4-v3**:
+  - `foo` é listado como símbolo (`T` para função), mas `bar` não é listado diretamente (considerado como parte da biblioteca dinâmica).
+
+   - `p4-v2` não expõe `bar` diretamente, pois está encapsulado na biblioteca estática `libp4.a`, enquanto `p4-v3` não lista `bar` diretamente no executável, pois depende da biblioteca dinâmica `libp4.so`.
+
+### d) Inspeção com `readelf -d`:
+
+- **p4-v1** e **p4-v2**:
+  - Ambos precisam apenas da biblioteca padrão `libc.so.6`.
+
+- **p4-v3**:
+  - Precisa da biblioteca dinâmica `libp4.so` além da `libc.so.6`.
+
+- `p4-v3` tem uma dependência explícita da biblioteca dinâmica `libp4.so`, enquanto `p4-v1` e `p4-v2` não têm essa dependência adicional.
+
+### e) Discussão sobre bibliotecas estáticas e dinâmicas:
+
+- **Instalação em hosts diferentes (`a`)**:
+  - **Estático**: Mais fácil de distribuir, pois todas as dependências estão incluídas no executável.
+  - **Dinâmico**: Requer que as bibliotecas estejam disponíveis no sistema, mas pode ser mais eficiente em termos de espaço.
+
+- **Atualização da biblioteca (`b`)**:
+  - **Estático**: Requer recompilação do programa para incluir as atualizações.
+  - **Dinâmico**: Atualizações na biblioteca podem beneficiar todos os programas que a utilizam sem necessidade de recompilação.
+
+- **Uso por muitos programas no mesmo host (`c`)**:
+  - **Estático**: Cada programa tem sua própria cópia da biblioteca, ocupando mais espaço de memória.
+  - **Dinâmico**: As bibliotecas compartilhadas são carregadas uma vez na memória, economizando espaço.
+
