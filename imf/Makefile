@@ -1,11 +1,11 @@
 #    SPDX-FileCopyrightText: 2021 Monaco F. J. <monaco@usp.br>
-#    SPDX-FileCopyrightText: 2024 Maria Júlia De Grandi <maju.degrandi@usp.br>
-#
+#    SPDX-FileCopyrightText: 2024 maju-degrandi <maju.degrandi@usp.br>
+#   
 #    SPDX-License-Identifier: GPL-3.0-or-later
 #
-#    This file is a derivative work from SYSeg (https://gitlab.com/monaco/syseg)
-#    and contains modifications carried out by the following author(s):
-#    Maria Júlia De Grandi <maju.degrandi@usp.br>
+#  This file is a derivative work from SYSeg (https://gitlab.com/monaco/syseg)
+#  and contains modifications carried out by the following author(s):
+#  maju-degrandi <maju.degrandi@usp.br>
 
 ##
 ## Relevant rules.
@@ -61,11 +61,20 @@ clean-export:
 ## End of export rules.
 
 # Get Secret Rules
+.PHONY: getsecretgdb
+
+getsecretgdb:
+	@echo "Executando getsecretgdb para obter a mensagem criptografada..."
+	gdb -x getsecret.gdb decode
+
 .PHONY: getsecret
 
-getsecret:
+libcrack.so: crack.c
+	gcc -m32 -shared -fPIC crack.c -o libcrack.so
+
+getsecret: libcrack.so
 	@echo "Executando getsecret para obter a mensagem criptografada..."
-	gdb -x getsecret.gdb decode
+	LD_PRELOAD=./libcrack.so ./decode secret.cry
 
 # Update docm4 files.
 #

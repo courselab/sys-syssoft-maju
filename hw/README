@@ -7,176 +7,144 @@
 #  and contains modifications carried out by the following author(s):
 #  maju-degrandi <maju.degrandi@usp.br>
 
- SysQuiz - A few quick questios.
- ==============================
+ Bare-Metal Hello World
+ ==============================================
 
- Some questions for your answer based on your knowledge of system software.
- Please, answer the questions in the file NOTEBOOK.
-
- 
-
- Instructions
- ------------------------------
-
- The code examples in this directory include explanatory comments annotated
- directly in the source file comments. Those notes are complemented by the
- additional technical discussions provided in this README file.
- 
- While some examples may be independent one from another, there may be also
- sequences of code snippets in which each example builds on its predecessor.
- In those cases, it may be interesting to go through the code examples in the
- same order they are introduced in the present README.
- 
- For convenience, a build script (e.g. Makefile) may be provided which contains
- rules to compile, execute and inspect the contents of the source and object
- the examples are built and executed.
-
+ This activity is meant for practicing the concepts and techniques addressed by
+ the series of examples in section 'syseg/eg/hw'.
 
  Challenge
  ------------------------------
+ 
+ In the following instructions, conisder that the program 'eg.asm' is one of the
+ example programs 'eg/hw/hw-01.asm' or 'eg/hw/hw-02.asm' by your own choice
+ (picking the latter is a signal of boldness, but the former is not bad either). 
 
- Tip: Taking a look at the './Makefile' may be instructive.
+ This directory includes a 'Makefile' script with a set of handy rules
+ preconfigure for your convenience.
+ 
 
- * p1.c      Explain the results.
+ 1) Assembler
 
-   	     Build p1: make p1
-		   
-	     Execute it a few times and explain the results.
-	     What is the rationale for this behavior.
+    a) Rewrite program 'eg.asm' as 'hw.S', using AT&T assembly syntax.
+
+    b) Implement an ad hoc assembler+linker program 'hwasm' that takes 'hw.S'
+       as input, and produces a flat-binary 'hw.bin', suitable to be loaded and
+       executed using the x86 BIOS legacy boot.
+
+       Write 'hwasm.c' in C, using only the ISO-C standard library [1].
+
+       The assembler may be a specific-purpose implementation that works only
+       with the given input.
 
 
- * p2.c	     Fix design vulnerability.
+    c) Use 'hwasm' to assemble 'hw.S' and produce 'hw.bin'.
 
-   	     Refer to p2.c and understand how the program works.
+       To assembly any file 'foo.S' the program must be invoked like
+       'hwasm foo.S' to produce 'foo.bin'.
 
-   	     Build p2: make p2
+       Tip: make 'hw.bin' should build the binary. 
 
-	     Execute the program and enter the correct input to pass the
-	     verification check.
 
-	     Then, rerun p2 and, when prompted, enter: youshallnotpass.
+    d) Compare 'hw.bin' with 'eg.bin'.
+
+       Tip:   make a16 hw.bin <path>/eg.bin
+
+       Do the outputs match? (They don't necessarily have too).
+
+       Comment in the file 'SOLVING'.
+
+    e) Disassemble 'hw.bin' and compare the result with 'hw.S'.
+
+       Tip:   make hw.bin/a16
+
+       Does the output (at least approximately) matches 'hw.S'? 
+
+       Comment in the file 'SOLVING'.
+       
+    f) Boot 'hw.bin' using the 'qemu' emulator.
+
+       Tip:   make hw.bin/run
+
+       Does it work?
+
+       Comment in the file 'SOLVING'.
+       
+    g) Boot 'hw.bin' in a real piece of hardware.
+
+       Tip:  - plug a USB stick into your computer (data will be lost!)
+       
+             - check which device it is associated to (use lsblk)
+
+	     - double check if the device is correct, and then triple check
 	     
-	     Explain the result and identify the design flaw that led to the
-	     vulnerability. Discuss possible modifications to make the program
-	     more robust.
+	     - make stick IMG=hw.bin DEVICE=<your-usb-stick-device>
 
-	     Now, rebuild the original p2 with
+	     - ensure that legacy boot is enabled in your BIOS setup
 
-	        make CFLAGS=-fstack-protector p2
+	     - reboot your computer
 
-	     Test the program with the same string and see what happens.
+	Does it work?
 
-	     Tip: yes, the compiler protects the stack with a canary but, as
-	     you may have noticed, no stack smash seems to be detected. What
-	     else happened and why, exactly, the program's behavior changed?
-
- * p3	     Explain the function calls.
-
-   	     Check p3.c and build p3 with: make p3.
-
-	     Disassemble p3:  make p3/d
-
-	     Locate the function 'main' (search for <main>).
-	     For gcc vr. 11.4.0 the output is like this. Yours may vary
-	     slightly if your gcc version is not the same but should not
-	     be too different:
-
-	      0804918d <main>:
-	      804918d:       55                push   %ebp
- 	      804918e:       89 e5             mov    %esp,%ebp
- 	      8049190:       83 e4 f0          and    $0xfffffff0,%esp
-	      8049193:       e8 07 00 00 00    call   804919f <foo>
-	      8049198:       b8 00 00 00 00    mov    $0x0,%eax
-	      804919d:       c9                leave  
-	      804919e:       c3                ret    
-
- 	      0804919f <foo>:
- 	      804919f:       55                push   %ebp
- 	      80491a0:       89 e5             mov    %esp,%ebp
- 	      80491a2:       83 ec 18          sub    $0x18,%esp
- 	      80491a5:       8b 45 08          mov    0x8(%ebp),%eax
- 	      80491a8:       83 c0 01          add    $0x1,%eax
- 	      80491ab:       83 ec 0c          sub    $0xc,%esp
- 	      80491ae:       50                push   %eax
- 	      80491af:       e8 eb ff ff ff    call   804919f <bar>
- 	      80491b4:       83 c4 10          add    $0x10,%esp
- 	      80491b7:       89 45 f4          mov    %eax,-0xc(%ebp)
- 	      80491ba:       8b 45 f4          mov    -0xc(%ebp),%eax
- 	      80491bd:       c9                leave  
- 	      80491be:       c3                ret    
-
-	      080491bf <bar>:
- 	      80491bf:       55                push   %ebp
- 	      80491c0:       89 e5             mov    %esp,%ebp
- 	      80491c2:       83 ec 10          sub    $0x10,%esp
- 	      80491c5:       8b 45 08          mov    0x8(%ebp),%eax
- 	      80491c8:       83 c0 01          add    $0x1,%eax
- 	      80491cb:       89 45 fc          mov    %eax,-0x4(%ebp)
- 	      80491ce:       8b 45 fc          mov    -0x4(%ebp),%eax
- 	      80491d1:       c9                leave  
- 	      80491d2:       c3                ret    
-
-	     Examine the functions 'main', 'foo' and 'bar'.
-
-	     a) Locate the line where 'foo' calls 'bar' and explain how the
-	     	caller passes the parameter to the callee. In your answer,
-		clarify the concepts of calling convention and application
-		binary interface.
-
-	     b) How 'bar' returns its result to 'foo'? How does the answer
-	     	related to what you discussed in item (a)?
-
-	     c) Explain what is the purpose of the first two instruction and
-	     	the second-to-last instruction of the function 'foo'. What does
-		it have to do with what you explained in item (a)?
-
-	     d) What is the purpose of the third line in both functions 'foo'
-	     	and 'bar' and what does it have to do with the x86 ABI? Does it
-		serve the same purpose than the third line of 'main'?
-
-             e) In the source code, change the return type of 'bar' to 'char'.
-	     	Rebuild p3 and examine the difference in the disassembly of
-		'foo'. Explain what the compiler did and, based on your answer,
-		discuss why the declaration of 'foo' and 'bar' before 'main'
-		are useful. 
-
- * p4	     How libraries work.
-
-   	     Examine the source code of program 'p4.c' and see that all it does
-	     it to call the function 'foo', implemented in the custom library
-	     'libp4', which, in turn, is available in both static and dynamic
-	     versions.
-
-
-	     The 'Makefile' in this directory provides three forms of building
-	     'p4': passing all objects explicitly to the link editor; passing
-	     the static library; and passing the dynamic library. You can build
-	     all three versions by running, respectively
-
-	        make p4-v1
-		make p4-v2
-		make p4-v3
-
-	     Compare the tree version with respect to the following aspects.
-
-	     a) Execute each program and comment the results.
+	Yeah? Go to show your friends you have written two words on the screen!!!
 	     
-	     b) Compare the size of all programs and explain the differences.
-	     
-	     c) Inspect all the programs with 'nm <program>' and discuss the
-	     	differences in when and how the symbols 'foo' and 'bar' are
-		listed. Tip, read the 'man page' of 'nm' and interpret the
-		letters in the second column.
+        Doesn't it work? Bummer! Proceeed to item (h).
 
-	     d) Inspect all the programs with 'readelf -d <program>' and discuss
-	     	the differences in the library information. How the 'Shared
-		library' field is used by the kernel when 'p4-v3' is loaded?
+	Comment in the file 'SOLVING'.
 
-	     e) Discuss the pros and cons of both static and dynamic libraries
-	     	in scenarios such as a) the executable program should be
-		installed in other hosts; b) the library is updated; c) the
-		library should be used by many different programs running in
-		the same host.
+
+     h) What if does not work.
+
+        If 'hw.bin' boots with 'qemu' but not with the real pieace of hardware,
+        chances are your computer has one of those ripster BIOSes that decide
+        to assume that all boot media is FAT-formatted, and thus believe they
+        can write things at the beginning of your 512-byte initialization
+        program after it has been loaded into RAM.
+
+	To handle such a situation, allow some spare space at the beginning of
+	your program, so that the BIOS can write there without messing up with
+	your program
+
+	Start your program with a jump instruction that lands at the beginning
+	of you executable code, 61 bytes below. Fill in the space between the
+	jump instruction and your code with 'not' instructions.
+
+	Tip:  Use the instruction 'jmp' and the directive '.fill'.
+
+	- Assemble your modified 'hw.S' with the GNU Assembler (as)
+	- Test it in the emulator to check everything is all right.
+	- Try to boot it in the real hardware.
+
+	Comment in the file 'SOLVING'.
+
+      i) Test 'hw.S' implementation using the GNU build chain.
+
+         - Use 'as' to assemble 'hw.S' and produce 'hw2.o'
+	 - Use 'ld' to link 'hw2.o' and producude 'hw2.bin'
+	 - Boot 'hw2.bin' using 'qemu'.
+	 - Compare 'hw.bin' and 'hw2.bin' (see tips above)
+	 - Optionally, boot 'hw.bin' in the real hardware.
+
+         Tip: You'll need to tell 'ld' where in the object file the entry point
+         of your program is (remeber, 'hw2.o' is not a flat binary). To that
+         end, you need to create a global label in 'hw.S' right at the
+         beginning of the program. Your assembly code should look like this
+
+	    '        .global _start        '
+	    '_start:                       '
+	    '        <start of your code>  '    
+
+	 (see 'eg/hw/eg-03.S' for an example)
+                   
+
+	 Comment in the file 'SOLVING'.
+
+	 
+ Reference
+ ------------------------------
+
+ [1] C Standard library, https://en.wikipedia.org/wiki/C_standard_library
+
 
  
  Directions for the exercise
@@ -315,7 +283,7 @@
   
 
 
- 
+
  
 
  Bintools: convenience rules for inspecting binary files
@@ -449,4 +417,3 @@
    make foo/l	  			     open foo in 'less' program
 
  
-

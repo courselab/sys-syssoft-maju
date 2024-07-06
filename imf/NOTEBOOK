@@ -1,0 +1,229 @@
+#    SPDX-FileCopyrightText: 2024 maju-degrandi <maju.degrandi@usp.br>
+#   
+#    SPDX-License-Identifier: GPL-3.0-or-later
+
+# Relatório de Entrega do Exercício
+
+## Primeira Solução:
+
+### Passo 1: Análise Inicial do Código
+
+Primeiramente, analisei o código do programa alvo (`decode`). Para isso, utilizei a ferramenta `objdump` para examinar o código binário. Executei o seguinte comando para obter o disassembly do programa:
+
+```bash
+objdump -d decode > decode_disassembly.txt
+```
+
+Depois, abri o arquivo `decode_disassembly.txt` para visualizar o código descompilado.
+
+Outra possibilidade é executar:
+```bash
+objdump -d decode > decode.asm
+```
+E então visualizar o assembly do programa.
+Ambas dão certo.
+
+### Passo 2: Identificação da Lógica de Decisão
+
+Na análise do disassembly, localizei a função `main` e procurei pela lógica de decisão que verifica a *validade de um token*. No código fornecido, identifiquei a seguinte instrução importante:
+
+```assembly
+8049395:       85 c0                   test   %eax,%eax
+8049397:       75 1a                   jne    80493b3 <main+0x126>
+```
+
+Essa instrução verifica o valor de `%eax`. Então, é isso o que precisamos mudar para obter a mensagem.
+
+### Passo 3: Utilização do GDB para Manipular a Execução
+
+Usei o `gdb` (GNU Debugger) para manipular a execução do programa e garantir que o bloco `else` fosse executado. Segui os passos abaixo para configurar e executar o `gdb`:
+
+#### 3.1. Iniciar o GDB
+
+Abri o terminal e iniciei o `gdb` com o programa `decode`:
+
+```bash
+gdb decode
+```
+
+#### 3.2. Definir Breakpoint
+
+Defini um breakpoint na instrução de teste identificada anteriormente:
+
+```gdb
+(gdb) b *0x8049395
+Breakpoint 1 at 0x8049395
+```
+
+#### 3.3. Configurar o Caminho da Biblioteca
+
+Como o programa requer a biblioteca `libcry.so`, configurei o caminho da biblioteca diretamente no GDB:
+
+```gdb
+(gdb) set env LD_LIBRARY_PATH .
+```
+
+#### 3.4. Executar o Programa
+
+Executei o programa com o arquivo de entrada fornecido:
+
+```gdb
+(gdb) run secret.cry
+```
+
+Quando solicitado, inseri qualquer valor como access token.
+
+#### 3.5. Manipular o Registrador
+
+Quando o breakpoint foi atingido, o `gdb` interrompeu a execução. Verifiquei os valores dos registradores:
+
+```gdb
+(gdb) info registers
+```
+
+Podemos ver que o valor no registrador que queremos analisar,`%eax`, é 0. Altere o valor de `%eax` para 1 para forçar a execução do bloco `else` como queremos:
+
+```gdb
+(gdb) set $eax=0x1
+```
+
+#### 3.6. Continuar a Execução
+
+Continuei a execução do programa:
+
+```gdb
+(gdb) c
+```
+
+O programa seguiu o bloco `else` e revelou a mensagem criptografada.
+
+### Passo 4: Automatização com Script GDB
+
+Para facilitar o processo, criei um script GDB (`getsecret.gdb`) com os seguintes comandos:
+
+```gdb
+set env LD_LIBRARY_PATH .
+b *0x8049395
+run secret.cry
+set $eax=0x1
+c
+```
+
+Executei o script GDB com o seguinte comando:
+
+```bash
+gdb -x getsecret.gdb decode
+```
+
+Quando solicitado, inseri qualquer valor como access token. O programa revelou a mensagem criptografada.
+
+### Passo 5: Solução Final com Makefile
+
+Para automatizar completamente o processo, criei a seguinte regra no Makefile disponibilizado pelo professor:
+
+```Makefile
+.PHONY: getsecretgdb
+
+getsecretgdb:
+    @echo "Executando getsecret para obter a mensagem criptografada..."
+    gdb -x getsecret.gdb decode
+```
+
+Para executar a solução final, rodei o seguinte comando:
+
+```bash
+make getsecretgdb
+```
+
+Quando o access token foi solicitado, inseri qualquer valor. O conteúdo descriptografado foi revelado.
+Para voltar ao terminal após a execução do make, basta digitar `quit` no gdb.
+
+---
+
+### Conclusão
+
+O conteúdo descriptografado obtido foi:
+https://drive.google.com/file/d/1n0w8dFS8zJ7flnAQI75uLkw40IzAVUdW
+
+---
+
+## Segunda Solução:
+
+### Passo 1: Análise Inicial do Código
+
+Como na primeira solução, analisei o código do programa alvo (`decode`) utilizando `objdump` para obter o disassembly do programa:
+
+```bash
+objdump -d decode > decode_disassembly.txt
+```
+
+### Passo 2: Identificação da Lógica de Decisão
+
+Na análise do disassembly, localizei a função `main` e a lógica de decisão que verifica a validade de um token:
+
+```assembly
+8049395:       85 c0                   test   %eax,%eax
+8049397:       75 1a                   jne    80493b3 <main+0x126>
+```
+
+### Passo 3: Criação de Biblioteca Customizada
+
+Observei que o laço de verificação utiliza a função `strcmp` da libc. Criei um arquivo `crack.c` para implementar uma versão customizada de `strcmp` que sempre retorna 0, simulando uma correspondência de token:
+
+```c
+int strcmp(const char* s1, const char *s2)
+{
+   return 0;
+}
+```
+
+Compilei o código para criar uma biblioteca compartilhada `libcrack.so`:
+
+```bash
+gcc -m32 -shared -fPIC crack.c -o libcrack.so
+```
+
+## Passo 4: Execução com Preload da Biblioteca Customizada
+
+Certifique-se de que o `LD_LIBRARY_PATH` inclui o diretório onde a `libcry.so` está localizada. Execute o programa `decode` utilizando a biblioteca customizada com o `LD_PRELOAD`:
+
+```bash
+export LD_LIBRARY_PATH=.
+LD_PRELOAD=./libcrack.so ./decode secret.cry
+```
+
+Quando solicitado, inseri qualquer valor como access token. O programa revelou a mensagem criptografada sem necessidade de depuração manual.
+
+### Passo 5: Solução Final com Makefile
+
+Para automatizar completamente o processo, criei a seguinte regra no Makefile:
+
+```Makefile
+.PHONY: getsecret
+
+libcrack.so: crack.c
+	gcc -m32 -shared -fPIC crack.c -o libcrack.so
+
+getsecret: libcrack.so
+	@echo "Executando getsecret para obter a mensagem criptografada..."
+	LD_PRELOAD=./libcrack.so ./decode secret.cry
+```
+
+Para executar a solução final, rodei o seguinte comando:
+
+```bash
+make getsecret
+```
+
+Quando o access token foi solicitado, inseri qualquer valor. O conteúdo descriptografado foi revelado.
+
+---
+
+### Conclusão
+
+O conteúdo descriptografado obtido foi:
+https://drive.google.com/file/d/1n0w8dFS8zJ7flnAQI75uLkw40IzAVUdW
+
+Essa abordagem se mostrou mais simples, permitindo a extração da mensagem sem a necessidade de ferramentas específicas como o GDB, expondo a vulnerabilidade de usar lib dinâmica, o que pode ser mais adequado em cenários restritos.
+
+---
