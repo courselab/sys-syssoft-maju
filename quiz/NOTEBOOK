@@ -79,6 +79,7 @@ Main's address: 0x5655619d
 
 A variação nos endereços de memória é devido ao ASLR, uma técnica de segurança importante. Desabilitá-lo temporariamente pode ser útil para testes, mas deve ser reativado para manter a segurança do sistema.
 
+~~~>> 2.5
 
 # p2.c
 
@@ -122,6 +123,9 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
    - Falha de Design: O programa não está validando corretamente a senha, permitindo acesso indevido.
    - Possível Modificação: Melhorar a verificação de senha para garantir que apenas a senha correta conceda acesso.
 
+~~~> Por que o programa não está validando corretamente a senha?
+~~~> Como melhorar?
+
 5. **Recompilar o programa com proteção de pilha**
 
    ```bash
@@ -149,6 +153,8 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
      Access denied
      ```
 
+~~~> O que aconteceu de diferente?
+
 ## Análise dos Resultados
 
 - **Comportamento com a Proteção de Pilha Ativada**
@@ -160,6 +166,10 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
 - A falha de design inicial permitia acesso com qualquer senha devido à verificação inadequada.
 - A recompilação com `-fstack-protector` adicionou uma camada de segurança, corrigindo a vulnerabilidade.
 - É crucial sempre validar corretamente as entradas e usar medidas de proteção adicionais para prevenir exploração de vulnerabilidades em programas.
+
+~~~> Mas o que acontece em nível de código executável?
+
+~~~>> 1.0
 
 # p3
 
@@ -255,6 +265,8 @@ Depois da mudança:
    - Isso é crucial para que o compilador possa gerar corretamente as chamadas de função, como vimos na extensão de sinal adicionada após a chamada de `bar` em `foo`.
    - Além disso, as declarações antecipadas ajudam na geração de código otimizado e na resolução de dependências entre funções no processo de compilação.
 
+~~~>> 2.5
+
 # p4
 ## Respostas:
 ### a) Execução de cada programa:
@@ -280,6 +292,8 @@ No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser enc
 - `p4-v3`: 14924 bytes
 
    - Observa-se uma pequena diferença nos tamanhos dos executáveis, sendo `p4-v3` o menor entre os três.
+
+~~~> E por que a diferençca?
 
 ### c) Inspeção com `nm`:
 
@@ -318,4 +332,4 @@ No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser enc
   - **Estático**: Cada programa tem sua própria cópia da biblioteca, ocupando mais espaço de memória.
   - **Dinâmico**: As bibliotecas compartilhadas são carregadas uma vez na memória, economizando espaço.
 
-
+~~~>> 2.0

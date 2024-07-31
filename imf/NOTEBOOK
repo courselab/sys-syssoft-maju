@@ -227,3 +227,5 @@ https://drive.google.com/file/d/1n0w8dFS8zJ7flnAQI75uLkw40IzAVUdW
 Essa abordagem se mostrou mais simples, permitindo a extração da mensagem sem a necessidade de ferramentas específicas como o GDB, expondo a vulnerabilidade de usar lib dinâmica, o que pode ser mais adequado em cenários restritos.
 
 ---
+
+~~~>> 10
