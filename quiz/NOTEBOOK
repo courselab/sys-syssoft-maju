@@ -160,8 +160,11 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
      Access denied
      ```
 
-   É notável que, após ativar a proteção de pilha, o acesso com a senha errada é negado, diferentemente da execução sem a proteção. Infere-se então que a proteção de pilha introduz um canário que ajuda a detectar sobrescrita de buffer.
-   No entanto, talvez o programa não tenha estourado o canário de forma necessária para que fosse acionada uma detecção imediata, pois nenhuma foi acionada.
+   É notável que, após ativar a proteção de pilha, o acesso com a senha errada é negado, diferentemente da execução sem a proteção. 
+   A proteção de pilha introduz um canário, localizado entre os endereços de registradores, fp e retorno, e as variáveis - o qual ajuda a detectar sobrescrita de buffer.
+   Porém, sua adição não garante a segurança do programa, uma vez que, caso o overflow invada apenas o espaço de memória de `verified`, a vulnerabilidade ainda pode ser explorada.
+   
+   Neste caso, talvez o programa não tenha estourado o canário de forma necessária para que fosse acionada uma detecção imediata, pois nenhuma foi acionada.
 
 # p3
 
@@ -280,9 +283,9 @@ No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser enc
 ### b) Comparação de tamanho dos programas:
 
    Observa-se uma pequena diferença nos tamanhos dos executáveis:
-- `p4-v1`: 15020 bytes. Ele é um maior que os outros porque inclui os códigos necessários dos arquivos `.o`.
-- `p4-v2`: 14980 bytes. É maior que a v3 porque é estaticamente ligado à biblioteca `libp4.a`.
-- `p4-v3`: 14924 bytes. É o menor porque a ligação com a biblioteca `libp4.a` é dinâmica.
+- `p4-v1`: 15020 bytes. Ele é um maior que os outros porque inclui os códigos necessários dos arquivos `.o`, ou seja, concatena todos os objetos.
+- `p4-v2`: 14980 bytes. É maior que a v3 porque é estaticamente ligado à biblioteca `libp4.a`, mas menor que a v1 pois concatena apenas os objetos necessários.
+- `p4-v3`: 14924 bytes. É o menor porque a ligação com a biblioteca `libp4.a` é dinâmica, e assim, não concatena nenhum deles.
 
 ### c) Inspeção com `nm`:
 
