@@ -119,12 +119,19 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
 
 4. **Explicar o Resultado e Identificar a Falha de Design**
 
-   - Observação: Mesmo com a senha incorreta `youshallnotpass`, o acesso foi concedido.
-   - Falha de Design: O programa não está validando corretamente a senha, permitindo acesso indevido.
-   - Possível Modificação: Melhorar a verificação de senha para garantir que apenas a senha correta conceda acesso.
+   Resultado:
+   Inserindo a senha correta "foo", o acesso é concedido. 
+   Inserindo a senha errada "youshallnotpass", o acesso também é concedido. 
 
-~~~> Por que o programa não está validando corretamente a senha?
-~~~> Como melhorar?
+   Explicação:
+   Isso ocorre por causa de um buffer overflow, pois não há verificação no limite de caracteres lidos na função scanf, e, dessa forma, a variável verified é sobrescrita com um outro valor que não 0, passando pelo if. 
+
+   Falha de Desing:
+   A falha está na função scanf, que não especifica um tamanho máximo para a string a ser lida, e então permite vulnerabilidades de buffer overflow que ocasionam o resultado obtido. 
+
+   Como melhorar:
+   É possível corrigir a falha com o uso de uma função que substitua a `scanf`, e especifique o tamanho da string, como, por exemplo, a função `fgets`, cujo segundo parâmetro deve ser o comprimento da string lida.
+   Caso a substituição não seja desejada, pode-se utilizar a `scanf` de modo a limitar os caracteres de leitura também. Sendo `N` o tamanho da string desejada, deve-se escrever `scanf("%Ns", user_key)`, em vez de apenas `"%s"`. 
 
 5. **Recompilar o programa com proteção de pilha**
 
@@ -153,23 +160,8 @@ A variação nos endereços de memória é devido ao ASLR, uma técnica de segur
      Access denied
      ```
 
-~~~> O que aconteceu de diferente?
-
-## Análise dos Resultados
-
-- **Comportamento com a Proteção de Pilha Ativada**
-  - A proteção de pilha introduz um canário que ajuda a detectar sobrescrita de buffer. Embora nenhum estouro de pilha tenha sido detectado, a proteção adicional alterou o comportamento do programa, prevenindo a exploração da vulnerabilidade.
-  - A senha incorreta `youshallnotpass` agora é corretamente negada, indicando que a proteção de pilha impediu a execução indevida do código.
-
-## Conclusão
-
-- A falha de design inicial permitia acesso com qualquer senha devido à verificação inadequada.
-- A recompilação com `-fstack-protector` adicionou uma camada de segurança, corrigindo a vulnerabilidade.
-- É crucial sempre validar corretamente as entradas e usar medidas de proteção adicionais para prevenir exploração de vulnerabilidades em programas.
-
-~~~> Mas o que acontece em nível de código executável?
-
-~~~>> 1.0
+   É notável que, após ativar a proteção de pilha, o acesso com a senha errada é negado, diferentemente da execução sem a proteção. Infere-se então que a proteção de pilha introduz um canário que ajuda a detectar sobrescrita de buffer.
+   No entanto, talvez o programa não tenha estourado o canário de forma necessária para que fosse acionada uma detecção imediata, pois nenhuma foi acionada.
 
 # p3
 
@@ -287,13 +279,10 @@ No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser enc
 
 ### b) Comparação de tamanho dos programas:
 
-- `p4-v1`: 15020 bytes
-- `p4-v2`: 14980 bytes
-- `p4-v3`: 14924 bytes
-
-   - Observa-se uma pequena diferença nos tamanhos dos executáveis, sendo `p4-v3` o menor entre os três.
-
-~~~> E por que a diferençca?
+   Observa-se uma pequena diferença nos tamanhos dos executáveis:
+- `p4-v1`: 15020 bytes. Ele é um maior que os outros porque inclui os códigos necessários dos arquivos `.o`.
+- `p4-v2`: 14980 bytes. É maior que a v3 porque é estaticamente ligado à biblioteca `libp4.a`.
+- `p4-v3`: 14924 bytes. É o menor porque a ligação com a biblioteca `libp4.a` é dinâmica.
 
 ### c) Inspeção com `nm`:
 
@@ -331,5 +320,3 @@ No início, houve um erro devido à biblioteca dinâmica `libp4.so` não ser enc
 - **Uso por muitos programas no mesmo host (`c`)**:
   - **Estático**: Cada programa tem sua própria cópia da biblioteca, ocupando mais espaço de memória.
   - **Dinâmico**: As bibliotecas compartilhadas são carregadas uma vez na memória, economizando espaço.
-
-~~~>> 2.0
